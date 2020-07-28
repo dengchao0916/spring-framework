@@ -443,7 +443,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		try {
 			// Give BeanPostProcessors a chance to return a proxy instead of the target bean instance.
-			//第一次调用后置处理器，希望后置处理器在此能返回一个代理对象
+			//第一次调用后置处理器
+			// InstantiationAwareBeanPostProcessors -> postProcessBeforeInstantiation -> return !=null -> postProcessAfterInitialization
+			// 希望后置处理器在此能返回一个代理对象
 			Object bean = resolveBeforeInstantiation(beanName, mbdToUse);
 			if (bean != null) {
 				return bean;
@@ -495,7 +497,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			instanceWrapper = this.factoryBeanInstanceCache.remove(beanName);
 		}
 		if (instanceWrapper == null) {
-			//实例化对象，里面第二次调用后置处理器
+			//实例化对象，里面第二次调用后置处理器(SmartInstantiationAwareBeanPostProcessor类型的后置处理器)
 			instanceWrapper = createBeanInstance(beanName, mbd, args);
 		}
 		final Object bean = instanceWrapper.getWrappedInstance();
@@ -508,7 +510,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		synchronized (mbd.postProcessingLock) {
 			if (!mbd.postProcessed) {
 				try {
-					//第三次调用后置处理器
+					//第三次调用后置处理器(MergedBeanDefinitionPostProcessor类型的后置处理器)
 					//通过后置处理器来应用合并后的BeanDefinition
 					//缓存了注入元素信息
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
@@ -531,7 +533,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				logger.trace("Eagerly caching bean '" + beanName +
 						"' to allow for resolving potential circular references");
 			}
-			//第四次调用后置处理器，判断是否需要AOP
+			//第四次调用后置处理器(SmartInstantiationAwareBeanPostProcessor类型的后置处理器)，判断是否需要AOP
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));
 		}
 
@@ -539,10 +541,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		Object exposedObject = bean;
 		try {
 			//填充属性，也就是我们说的自动注入
-			//里面会完成第五次和第六次后置处理器的调用
+			//完成第五次后置处理器的调用(InstantiationAwareBeanPostProcessor -> postProcessAfterInstantiation)
+			//和第六次后置处理器的调用(InstantiationAwareBeanPostProcessor -> postProcessProperties -> return != null -> postProcessPropertyValues)
 			populateBean(beanName, mbd, instanceWrapper);
 			//初始化spring bean
-			//里面会进行第七次和第八次后置处理器的调用
+			//进行第七次后置处理器的调用(所有后置处理器 -> postProcessBeforeInitialization)
+			//和第八次后置处理器的调用(所有后置处理器 -> postProcessAfterInitialization)
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		}
 		catch (Throwable ex) {
@@ -583,6 +587,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		// Register bean as disposable.
+		//注册bean销毁方法
 		try {
 			registerDisposableBeanIfNecessary(beanName, bean, mbd);
 		}
@@ -1369,6 +1374,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		if (pvs != null) {
+			//用setter方法给bean对象的属性赋值
 			applyPropertyValues(beanName, mbd, bw, pvs);
 		}
 	}
@@ -1701,6 +1707,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			}, getAccessControlContext());
 		}
 		else {
+			//执行实现了Aware接口的方法
 			invokeAwareMethods(beanName, bean);
 		}
 
@@ -1711,7 +1718,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		try {
-			//执行InitializingBean 初始化方法
+			//执行InitializingBean(实现了InitializingBean接口的Bean)的初始化方法
 			invokeInitMethods(beanName, wrappedBean, mbd);
 		}
 		catch (Throwable ex) {
