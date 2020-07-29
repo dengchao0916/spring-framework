@@ -1,6 +1,5 @@
 package com.dengchao.dependency;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -11,15 +10,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserService {
 
-	@Autowired
-	private IndexService indexService;
+	/*@Autowired
+	private IndexService indexService;*/
 
 	public UserService(){
 		System.out.println("UserService construct");
 	}
 
-	public IndexService getIndexService(){
+	/*public IndexService getIndexService(){
 		System.out.println("UserService getIndexService");
 		return indexService;
-	}
+	}*/
 }
